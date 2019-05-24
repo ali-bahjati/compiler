@@ -1,7 +1,39 @@
+import logging
 #from scannerTwo import get_next_token
 
-list_scan = [['(SYMBOL, ()', 1], ['(ID, id)', 1], ['(SYMBOL, ))', 1], ['(EOF, eof)', 2], ['......', 2]]
-# TODO: EOF should be handled separately
+# logging.basicConfig(filename='parser.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
+#                     level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('Parser')
+
+list_scan = [
+    ('SYMBOL', '(', 1),
+    ('SYMBOL', '(', 1),
+    ('ID', 'simple_var', 1),
+    ('SYMBOL', ')', 1),
+    ('SYMBOL', ')', 1),
+    ('EOF', 'eof', 2)
+]
+
+
+def get_next_token():
+    if not list_scan:
+        return None
+
+    t = list_scan.pop(0)
+
+    while t[0] in ['WHITESPACE', 'COMMENT']:
+        t = list_scan.pop(0)
+
+    ret = {'line': t[2]}
+
+    if t[0] == 'KEYWORD' or t[0] == 'SYMBOL' or t[0] == 'EOF':
+        ret['text'] = t[1]
+    else:
+        ret['text'] = t[0].lower()
+        ret['value'] = t[1]
+
+    return ret
 
 
 class State:
@@ -35,7 +67,7 @@ class Edge:
         self.to_node = to_node
         self.type = tpe
 
-        # print("New edge created:", from_node, to_node, tpe, symbol)
+        # logger.info("New edge created:", from_node, to_node, tpe, symbol)
 
 
 def build_diagram():
@@ -58,7 +90,7 @@ def build_diagram():
             line = line.strip()[:-1].split()  # remove dot(.) in the end of line
             start_state = State()
             accept_state = State(accept=True)
-            print(line)
+            logging.info(line)
 
             var_sym = line[0]
             assert line[1] == '->', 'Line should start with Var and then ->. e.g: A -> blob blob'
@@ -107,30 +139,10 @@ def build_diagram():
 dic_components, dic_first, dic_follow, dic_nullable, start_symbol = build_diagram()
 
 
-def get_current_token(token):
-    current_token = ''
-    if token[0][1: 3] == 'ID':
-        current_token = 'id'
-    elif token[0][1: 4] == 'EOF':
-        current_token = 'eof'
-    elif token[0][1: 4] == 'NUM':
-        current_token = 'num'
-    elif token[0][1: 7] == 'SYMBOL':
-        current_token = token[0].split()[1][: -1]  # TODO: replace symbols in the grammar file
-    elif token[0][1: 8] == 'KEYWORD':
-        current_token = token[0].split()[1][: -1]
-    return current_token
-
-
-def get_next_token():
-    t = list_scan[0]
-    list_scan.pop(0)
-    return get_current_token(t)
-
-
-def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree):
-    print("Entering", cur_component, "with", cur_token)
+def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree):
+    logging.info(f"Entering {cur_component} with {cur_token}")
     cur_state: State = cur_component.start_state
+
     parse_tree.append([depth, cur_component.symbol])
     depth += 1
 
@@ -138,13 +150,13 @@ def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree)
         match = False
 
         for edge in cur_state.out_edges:
-            if edge.type == 'T' and edge.symbol == cur_token:
+            if edge.type == 'T' and edge.symbol == cur_token['text']:
                 parse_tree.append([depth, edge.symbol])
                 cur_state = edge.to_node
                 cur_token = get_next_token()
                 match = True
                 break
-            if edge.type == 'V' and cur_token in dic_first[edge.symbol]:
+            if edge.type == 'V' and cur_token['text'] in dic_first[edge.symbol]:
                 cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
                 cur_state = edge.to_node
                 match = True
@@ -154,7 +166,7 @@ def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree)
             continue
 
         for edge in cur_state.out_edges:
-            if edge.type == 'V' and dic_nullable[edge.symbol] and cur_token in dic_follow[edge.symbol]:
+            if edge.type == 'V' and dic_nullable[edge.symbol] and cur_token['text'] in dic_follow[edge.symbol]:
                 cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
                 cur_state = edge.to_node
                 match = True
@@ -164,7 +176,7 @@ def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree)
             continue
 
         for edge in cur_state.out_edges:
-            if edge.type == 'E' and cur_token in dic_follow[cur_component.symbol]:
+            if edge.type == 'E' and cur_token['text'] in dic_follow[cur_component.symbol]:
                 parse_tree.append([depth, 'epsilon'])
                 cur_state = edge.to_node  # It should go to final state
                 assert cur_state == cur_component.accept_state, 'After going through eps should always reach accept'
@@ -174,9 +186,33 @@ def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree)
         if match:
             continue
 
-        raise Exception("TODO: Handle errors")
+        assert cur_state != cur_component.start_state, "Parser should not stuck in start_state of of variable"
+        assert len(cur_state.out_edges) == 1, "Any state other than start_state should have only one outgoing edge"
 
-    print("Returning", cur_component, "with", cur_token)
+        edge = cur_state.out_edges[0]
+
+        assert edge.type != 'E', 'Epsilon edge is only from start_state'
+
+        if cur_token['text'] == 'eof':
+            logger.error(f"#{cur_token['line']}: Syntax Error! Unexpected EOF.")
+            break
+
+        if edge.symbol == 'eof':
+            logger.error(f"#{cur_token['line']}: Syntax Error! Malformed input.")
+            break
+
+        if edge.type == 'T':
+            logger.error(f"#{cur_token['line']}: Syntax Error! Missing {edge.symbol}")
+            cur_state = edge.to_node
+        else:
+            if cur_token['text'] not in dic_follow[edge.symbol]:
+                logger.error(f"#{cur_token['line']}: Syntax Error! Unexpected {cur_token['text']}")
+                cur_token = get_next_token()
+            else:
+                logger.error(f"#{cur_token['line']}: Syntax Error! Missing {edge.symbol} description")
+                cur_state = edge.to_node
+
+    logging.info(f"Returning {cur_component} with {cur_token}")
 
     return cur_token, parse_tree
 
@@ -184,9 +220,7 @@ def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree)
 def construct_parse_tree(tree):
     f = open('parse.txt', 'w+')
     for t in tree:
-        for i in range(t[0]):
-            f.write('|\t')
-        f.write(t[1] + '\n')
+        f.write('|\t' * t[0] + t[1] + '\n')
 
 
 def parse():
@@ -195,6 +229,5 @@ def parse():
     a, b = recursive_parse(current_component, token, 0, [])
     construct_parse_tree(b)
 
+
 parse()
-
-
