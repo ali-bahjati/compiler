@@ -1,5 +1,5 @@
 import logging
-#from scannerTwo import get_next_token
+from scanner import get_next_token_s
 
 # logging.basicConfig(filename='parser.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
 #                     level=logging.ERROR)
