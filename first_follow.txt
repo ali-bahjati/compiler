@@ -1,25 +1,30 @@
-E
+S
 ( id
-)
-no
-yes
-T
-( id
-) +
+
 no
 yes
 E'
 +
-)
+eof )
 yes
-yes
-F
-( id
-) * +
 no
-yes
+T
+( id
++ eof )
+no
+no
 T'
 *
-) +
++ eof )
 yes
-yes
+no
+F
+( id
+* + eof )
+no
+no
+E
+( id
+eof )
+no
+no

@@ -1,12 +1,7 @@
 #from scannerTwo import get_next_token
 
-list_scan = [['(SYMBOL, ()', 1], ['(ID, id)', 1], ['(SYMBOL, ))', 1]]
-
-
-def get_next_token():
-    t = list_scan[0]
-    list_scan.pop(0)
-    return t
+list_scan = [['(SYMBOL, ()', 1], ['(ID, id)', 1], ['(SYMBOL, ))', 1], ['(EOF, eof)', 2], ['......', 2]]
+# TODO: EOF should be handled separately
 
 
 class State:
@@ -116,6 +111,8 @@ def get_current_token(token):
     current_token = ''
     if token[0][1: 3] == 'ID':
         current_token = 'id'
+    elif token[0][1: 4] == 'EOF':
+        current_token = 'eof'
     elif token[0][1: 4] == 'NUM':
         current_token = 'num'
     elif token[0][1: 7] == 'SYMBOL':
@@ -125,47 +122,59 @@ def get_current_token(token):
     return current_token
 
 
-def recursive_parse(current_component: Component, token: str):
-    print("Entering", current_component, "with", token)
-    current_state: State = current_component.start_state
-    current_token: str = get_current_token(token)
+def get_next_token():
+    t = list_scan[0]
+    list_scan.pop(0)
+    return get_current_token(t)
 
-    while not current_state.accept:
-        pass
 
-    i = 0
-    while i < len(current_state.out_edges):
-        print('c_t:', current_token, 'within', current_component)
-        edge = current_state.out_edges[i]
-        if edge.type == 'T' and edge.symbol == current_token:
-            current_state = edge.toNode
-            token = get_next_token()
-            current_token = get_current_token(token)
-            i = 0
+def recursive_parse(cur_component: Component, cur_token: str):
+    print("Entering", cur_component, "with", cur_token)
+    cur_state: State = cur_component.start_state
+
+    while not cur_state.accept:
+        match = False
+
+        for edge in cur_state.out_edges:
+            if edge.type == 'T' and edge.symbol == cur_token:
+                cur_state = edge.to_node
+                cur_token = get_next_token()
+                match = True
+                break
+            if edge.type == 'V' and cur_token in dic_first[edge.symbol]:
+                cur_token = recursive_parse(dic_components[edge.symbol], cur_token)
+                cur_state = edge.to_node
+                match = True
+                break
+
+        if match:
             continue
-        elif edge.type == 'V':
-            if current_token in dic_first[edge.symbol]:
-                current_token = recursive_parse(dic_components[edge.symbol], token)
-                current_state = edge.toNode
-                i = 0
-                continue
-            elif edge.isNullable and (current_token in dic_follow[edge.symbol]):
-                current_token = recursive_parse((dic_components[edge.symbol]), token)
-                current_state = edge.toNode
-                i = 0
-                continue
-        elif edge.symbol == ' ' and current_token in dic_follow[current_component.symbol]:
-            current_state = current_component.accept_state
-            i = 0
+
+        for edge in cur_state.out_edges:
+            if edge.type == 'V' and dic_nullable[edge.symbol] and cur_token in dic_follow[edge.symbol]:
+                cur_token = recursive_parse(dic_components[edge.symbol], cur_token)
+                cur_state = edge.to_node
+                match = True
+                break
+
+        if match:
             continue
-        i += 1
 
-    if current_state.accept:
-        print("Returning", current_component, "with", token)
+        for edge in cur_state.out_edges:
+            if edge.type == 'E' and cur_token in dic_follow[cur_component.symbol]:
+                cur_state = edge.to_node  # It should go to final state
+                assert cur_state == cur_component.accept_state, 'After going through eps should always reach accept'
+                match = True
+                break
 
-        return current_token
+        if match:
+            continue
 
-    raise Exception("Should not reach here")
+        raise Exception("TODO: Handle errors")
+
+    print("Returning", cur_component, "with", cur_token)
+
+    return cur_token
 
 
 def parse():

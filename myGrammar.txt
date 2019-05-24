@@ -1,3 +1,4 @@
+S -> E eof.
 E -> T E'.
 E' -> + T E' | .
 T -> F T'.
