@@ -62,6 +62,7 @@ def giveRes(state1, state2, string):
     else:
         return 'correct', dic[state1, state2]
 
+
 def kind_t(str):
     if str.isdigit():
         return 'NUMBER'
@@ -81,6 +82,7 @@ def kind_t(str):
         return 'NEWLINE'
     else:
         return 'ERROR'
+
 
 def scan():
     list_result = []
@@ -181,7 +183,7 @@ def scan():
                 ('total_comment', 'NEWLINE'): 'total_comment',
                 ('s', 'NEWLINE'): 'total_comment'
                 }
-    with open('a.txt') as f:
+    with open('code.txt') as f:
         result_number_of_line = 1
         error_number_of_line = 1
         for line in f:
@@ -266,6 +268,8 @@ def scan():
 
 
 list_scan = scan()
+
+
 def get_next_token_s():
     try:
         return next(list_scan)
