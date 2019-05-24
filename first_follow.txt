@@ -1,0 +1,25 @@
+E
+( id
+)
+no
+yes
+T
+( id
+) +
+no
+yes
+E'
++
+)
+yes
+yes
+F
+( id
+) * +
+no
+yes
+T'
+*
+) +
+yes
+yes
