@@ -27,11 +27,11 @@ Def_stmt -> default : Stmt_list | .
 Expr_sec -> Term' Additive_expr' Simple_expr'. 
 Expr -> + Fact Expr_sec | - Fact Expr_sec | num Expr_sec | ( Expr ) Expr_sec | id Expr'.
 Expr' -> Call' Expr_sec | Var' Expr''.
-Expr'' -> oeq Expr | Expr_sec.
+Expr'' -> = Expr | Expr_sec.
 Var -> id  Var'.
 Var' -> [ Expr ] | .
 Simple_expr' -> Relop Additive_expr | .
-Relop -> oless | odoubeq.
+Relop -> < | ==.
 Additive_expr -> Term Additive_expr'.
 Additive_expr' -> Addop Additive_expr | .
 Addop -> + | -.

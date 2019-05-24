@@ -9,7 +9,7 @@
 9. (ID, fff)(SYMBOL, [)(NUM, 1)(SYMBOL, ])(SYMBOL, =)(ID, d)(SYMBOL, +)(NUM, 1)(SYMBOL, ;)
 10. (ID, f)(SYMBOL, =)(ID, foo2)(SYMBOL, ()(ID, fff)(SYMBOL, ))(SYMBOL, ;)
 11. (ID, b)(SYMBOL, =)(ID, e)(SYMBOL, +)(ID, f)(SYMBOL, ;)
-12. (KEYWORD, while)(SYMBOL, ()(ID, d)(NUM, 0)(SYMBOL, ))(SYMBOL, {)
+12. (KEYWORD, while)(SYMBOL, ()(ID, d)(SYMBOL, <)(NUM, 0)(SYMBOL, ))(SYMBOL, {)
 13. (ID, f)(SYMBOL, =)(ID, f)(SYMBOL, +)(ID, d)(SYMBOL, ;)
 14. (ID, d)(SYMBOL, =)(ID, d)(SYMBOL, -)(NUM, 1)(SYMBOL, ;)
 15. (KEYWORD, if)(SYMBOL, ()(ID, d)(SYMBOL, ==)(NUM, 4)(SYMBOL, ))

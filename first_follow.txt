@@ -129,17 +129,17 @@ case default }
 yes
 no
 Expr'
-( [ oeq * + - oless odoubeq
+( [ = * + - < ==
 ; ] ) ,
 yes
 no
 Expr''
-oeq * + - oless odoubeq
+= * + - < ==
 ; ] ) ,
 yes
 no
 Expr_sec
-* + - oless odoubeq
+* + - < ==
 ; ] ) ,
 yes
 no
@@ -149,23 +149,23 @@ id
 no
 no
 Simple_expr'
-oless odoubeq
+< ==
 ; ] ) ,
 yes
 no
 Relop
-oless odoubeq
+< ==
 + - ( num id
 no
 no
 Additive_expr'
 + -
-oless odoubeq ; ] ) ,
+< == ; ] ) ,
 yes
 no
 Additive_expr
 + - ( num id
-oless odoubeq ; ] ) ,
+< == ; ] ) ,
 no
 no
 Addop
@@ -175,42 +175,42 @@ no
 no
 Term'
 *
-+ - oless odoubeq ; ] ) ,
++ - < == ; ] ) ,
 yes
 no
 Term
 + - ( num id
-+ - oless odoubeq ; ] ) ,
++ - < == ; ] ) ,
 no
 no
 Signed_fact
 + - ( num id
-* + - oless odoubeq ; ] ) ,
+* + - < == ; ] ) ,
 no
 no
 Fact
 ( num id
-* + - oless odoubeq ; ] ) ,
+* + - < == ; ] ) ,
 no
 no
 Conf_var_call
 id
-* + - oless odoubeq ; ] ) ,
+* + - < == ; ] ) ,
 no
 no
 Conf_var_call'
 [ (
-* + - oless odoubeq ; ] ) ,
+* + - < == ; ] ) ,
 yes
 no
 Var'
 [
-oeq * + - oless odoubeq ; ] ) ,
+= * + - < == ; ] ) ,
 yes
 no
 Call'
 (
-* + - oless odoubeq ; ] ) ,
+* + - < == ; ] ) ,
 no
 no
 Args

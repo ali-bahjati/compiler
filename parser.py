@@ -211,7 +211,7 @@ def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree)
 
 
 def construct_parse_tree(tree):
-    f = open('parse.txt', 'w+')
+    f = open('parse_table.txt', 'w+')
     for t in tree:
         f.write('|\t' * t[0] + t[1] + '\n')
 
