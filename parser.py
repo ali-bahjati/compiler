@@ -6,6 +6,7 @@ logging.basicConfig(filename='parser.log', filemode='w', format='%(name)s - %(le
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Parser')
 
+
 def get_next_token():
     t = get_next_token_s()
 
