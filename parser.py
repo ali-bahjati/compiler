@@ -128,21 +128,24 @@ def get_next_token():
     return get_current_token(t)
 
 
-def recursive_parse(cur_component: Component, cur_token: str):
+def recursive_parse(cur_component: Component, cur_token: str, depth, parse_tree):
     print("Entering", cur_component, "with", cur_token)
     cur_state: State = cur_component.start_state
+    parse_tree.append([depth, cur_component.symbol])
+    depth += 1
 
     while not cur_state.accept:
         match = False
 
         for edge in cur_state.out_edges:
             if edge.type == 'T' and edge.symbol == cur_token:
+                parse_tree.append([depth, edge.symbol])
                 cur_state = edge.to_node
                 cur_token = get_next_token()
                 match = True
                 break
             if edge.type == 'V' and cur_token in dic_first[edge.symbol]:
-                cur_token = recursive_parse(dic_components[edge.symbol], cur_token)
+                cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
                 cur_state = edge.to_node
                 match = True
                 break
@@ -152,7 +155,7 @@ def recursive_parse(cur_component: Component, cur_token: str):
 
         for edge in cur_state.out_edges:
             if edge.type == 'V' and dic_nullable[edge.symbol] and cur_token in dic_follow[edge.symbol]:
-                cur_token = recursive_parse(dic_components[edge.symbol], cur_token)
+                cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
                 cur_state = edge.to_node
                 match = True
                 break
@@ -162,6 +165,7 @@ def recursive_parse(cur_component: Component, cur_token: str):
 
         for edge in cur_state.out_edges:
             if edge.type == 'E' and cur_token in dic_follow[cur_component.symbol]:
+                parse_tree.append([depth, 'epsilon'])
                 cur_state = edge.to_node  # It should go to final state
                 assert cur_state == cur_component.accept_state, 'After going through eps should always reach accept'
                 match = True
@@ -174,19 +178,23 @@ def recursive_parse(cur_component: Component, cur_token: str):
 
     print("Returning", cur_component, "with", cur_token)
 
-    return cur_token
+    return cur_token, parse_tree
+
+
+def construct_parse_tree(tree):
+    f = open('parse.txt', 'w+')
+    for t in tree:
+        for i in range(t[0]):
+            f.write('|\t')
+        f.write(t[1] + '\n')
 
 
 def parse():
     current_component = dic_components[start_symbol]
     token = get_next_token()
-    recursive_parse(current_component, token)
-
+    a, b = recursive_parse(current_component, token, 0, [])
+    construct_parse_tree(b)
 
 parse()
-
-
-
-
 
 
