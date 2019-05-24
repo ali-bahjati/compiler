@@ -10,11 +10,17 @@ def get_next_token():
 
 
 class State:
-    def __init__(self):
-        self.state_number = 0
-        self.in_edges = {}
+    instance_cnt = 0
+
+    def __init__(self, accept: bool = False):
+        self.state_number = State.instance_cnt
+        State.instance_cnt += 1
+
         self.out_edges = []
-        self.isAccept = False
+        self.accept = accept
+
+    def __str__(self):
+        return f"({self.state_number}, {self.accept})"
 
 
 class Component:
@@ -23,95 +29,87 @@ class Component:
         self.start_state = None
         self.accept_state = None
 
+    def __str__(self):
+        return self.symbol
+
 
 class Edge:
-    def __init__(self):
-        self.symbol = ''
-        self.fromNode = None
-        self.toNode = None
-        self.first = []
-        self.follow = []
-        self.isNullable = False
-        self.type = ''
+    def __init__(self, from_node, to_node, tpe, symbol=''):
+        self.symbol = symbol
+        self.from_node = from_node
+        self.to_node = to_node
+        self.type = tpe
+
+        # print("New edge created:", from_node, to_node, tpe, symbol)
 
 
-def buildDFA():
-    dic_components = {}
-    dic_first = {}
-    dic_follow = {}
-    dic_nullable = {}
+def build_diagram():
+    components = {}
+    first = {}
+    follow = {}
+    nullable = {}
     with open('first_follow.txt') as f:
-        file_list = f.readlines()
-        for i in range(0, len(file_list) - 4, 5):
-            dic_first[file_list[i][: -1]] = file_list[i + 1][: -1].split()
-            dic_follow[file_list[i][: -1]] = file_list[i + 2][: -1].split()
-            if file_list[i + 3][: -1] == 'no':
-                dic_nullable[file_list[i][: -1]] = False
-            else:
-                dic_nullable[file_list[i][: -1]] = True
+        file_list = list(map(lambda x: x.strip(), f.readlines()))
+        for i in range(0, len(file_list), 5):
+            first[file_list[i]] = file_list[i + 1].split()
+            follow[file_list[i]] = file_list[i + 2].split()
+            nullable[file_list[i]] = False if file_list[i + 3] == 'no' else True
 
     with open('myGrammar.txt') as f:
-        start_symbol = f.readline().split()[0]
+        start_sym = f.readline().split()[0]
 
     with open('myGrammar.txt') as f:
-        num_of_states = 0
         for line in f:
-            line = line.strip()[:-1].split()
+            line = line.strip()[:-1].split()  # remove dot(.) in the end of line
             start_state = State()
-            start_state.state_number = num_of_states
-            num_of_states += 1
-            s = start_state
-            accept_state = State()
-            accept_state.isAccept = True
-            accept_state.state_number = num_of_states
-            num_of_states += 1
-            for i in range(2, len(line)):
-                if not line[i] == '|':
-                    if i == len(line) - 1 and line[i] == ' ':      #epsilon
-                        e = Edge()
-                        e.symbol = line[i]
-                        e.fromNode = start_state
-                        e.toNode = accept_state
-                        start_state.out_edges.append(e)
-                    else:
-                        if i < (len(line) - 1):
-                            if line[i + 1] == '|':
-                                ss = accept_state
-                            else:
-                                ss = State()
-                                ss.state_number = num_of_states
-                                num_of_states += 1
-                        else:
-                            ss = accept_state
-                        e = Edge()
-                        e.symbol = line[i]
-                        e.fromNode = s
-                        e.toNode = ss
+            accept_state = State(accept=True)
+            print(line)
 
-                        if e.symbol[0].isupper():
-                            e.type = 'V'
-                            e.first = dic_first[line[i]]
-                            e.follow = dic_follow[line[i]]
-                            e.isNullable = dic_nullable[line[i]]
-                        else:
-                            e.type = 'T'
+            var_sym = line[0]
+            assert line[1] == '->', 'Line should start with Var and then ->. e.g: A -> blob blob'
 
-                        s.out_edges.append(e)
+            line = line[2:]
 
-                        s = ss
+            if not line or line[-1] == '|':  # If a variable can be eps it will be it's last rule.
+                edge = Edge(start_state, accept_state, 'E', '')
+                start_state.out_edges.append(edge)
+                line = line[:-1]
+
+            line += ['|']
+
+            cur_state: State = start_state
+            cur_text: str = ''
+            begin = True
+
+            def t_type(text: str):
+                return 'V' if text[0].isupper() else 'T'
+
+            for i, word in enumerate(line):
+                if line[i] == '|':
+                    assert cur_text, 'Rule should not be empty'
+                    cur_state.out_edges.append(Edge(cur_state, accept_state, t_type(cur_text), cur_text))
+                    begin = True
                 else:
-                    s = start_state
+                    if begin:
+                        cur_state = start_state
+                        cur_text = word
+                        begin = False
+                    else:
+                        state = State()
+                        cur_state.out_edges.append(Edge(cur_state, state, t_type(cur_text), cur_text))
+                        cur_state = state
+                        cur_text = word
 
             comp = Component()
             comp.start_state = start_state
             comp.accept_state = accept_state
-            comp.symbol = line[0]
-            dic_components[line[0]] = comp
+            comp.symbol = var_sym
+            components[var_sym] = comp
 
-    return dic_components, dic_first, dic_follow, dic_nullable, start_symbol
+    return components, first, follow, nullable, start_sym
 
 
-dic_components, dic_first, dic_follow, dic_nullable, start_symbol = buildDFA()
+dic_components, dic_first, dic_follow, dic_nullable, start_symbol = build_diagram()
 
 
 def get_current_token(token):
@@ -128,12 +126,16 @@ def get_current_token(token):
 
 
 def recursive_parse(current_component: Component, token: str):
-    current_state = current_component.start_state
-    current_token = get_current_token(token)
+    print("Entering", current_component, "with", token)
+    current_state: State = current_component.start_state
+    current_token: str = get_current_token(token)
+
+    while not current_state.accept:
+        pass
 
     i = 0
     while i < len(current_state.out_edges):
-        print('c_t:', current_token, 'within', current_component.symbol)
+        print('c_t:', current_token, 'within', current_component)
         edge = current_state.out_edges[i]
         if edge.type == 'T' and edge.symbol == current_token:
             current_state = edge.toNode
@@ -158,8 +160,12 @@ def recursive_parse(current_component: Component, token: str):
             continue
         i += 1
 
-    if current_state.isAccept:
+    if current_state.accept:
+        print("Returning", current_component, "with", token)
+
         return current_token
+
+    raise Exception("Should not reach here")
 
 
 def parse():
