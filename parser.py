@@ -65,7 +65,7 @@ def build_diagram():
 
             line = line[2:]
 
-            if not line or line[-1] == '|':  # If a variable can be eps it will be it's last rule.
+            if not line or line[-1] == '|':  # If a variable can be eps it should be it's last rule.
                 edge = Edge(start_state, accept_state, 'E', '')
                 start_state.out_edges.append(edge)
                 line = line[:-1]
