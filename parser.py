@@ -7,11 +7,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Parser')
 
 list_scan = [
-    ('SYMBOL', '(', 1),
-    ('SYMBOL', '(', 1),
+    ('KEYWORD', 'int', 1),
     ('ID', 'simple_var', 1),
-    ('SYMBOL', ')', 1),
-    ('SYMBOL', ')', 1),
+    ('SYMBOL', '[', 1),
+    ('NUM', '1323', 1),
+    ('SYMBOL', ']', 1),
+    ('SYMBOL', ';', 1),
     ('EOF', 'eof', 2)
 ]
 
@@ -82,10 +83,10 @@ def build_diagram():
             follow[file_list[i]] = file_list[i + 2].split()
             nullable[file_list[i]] = False if file_list[i + 3] == 'no' else True
 
-    with open('myGrammar.txt') as f:
+    with open('grammar.txt') as f:
         start_sym = f.readline().split()[0]
 
-    with open('myGrammar.txt') as f:
+    with open('grammar.txt') as f:
         for line in f:
             line = line.strip()[:-1].split()  # remove dot(.) in the end of line
             start_state = State()

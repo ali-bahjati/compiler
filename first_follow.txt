@@ -1,30 +1,235 @@
-S
-( id
+Prg
+eof int void
 
 no
 yes
-E'
-+
-eof )
+Decl
+int void
+int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Decl'
+( ; [
+int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Var_decl_suf
+; [
+int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Var_decl'
+; [
+int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Fun_decl_suf
+(
+int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Params
+int void
+)
+no
+no
+Params'
+id
+)
 yes
 no
-T
-( id
-+ eof )
+Param_list'
+,
+)
+yes
+no
+Param_list
+int void
+)
 no
 no
-T'
+Param
+int void
+, )
+no
+no
+Type_spc
+int void
+id
+no
+no
+Param'
+[
+, )
+yes
+no
+Decl_list
+int void
+eof continue break ; { if while return switch + - num ( id }
+yes
+no
+Compnd_stmt
+{
+case default else int void eof continue break ; { if while return switch + - num ( id }
+no
+no
+Expr_stmt
+continue break ; + - num ( id
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Sel_stmt
+if
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Iter_stmt
+while
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Stmt
+continue break ; { if while return switch + - num ( id
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Ret_stmt
+return
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Ret_stmt'
+; + - num ( id
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Switch_stmt
+switch
+case default continue break ; { if while return switch + - num ( id else }
+no
+no
+Case_stmts
+case
+default }
+yes
+no
+Case_stmt
+case
+case default }
+no
+no
+Def_stmt
+default
+}
+yes
+no
+Stmt_list
+continue break ; { if while return switch + - num ( id
+case default }
+yes
+no
+Expr'
+( [ oeq * + - oless odoubeq
+; ] ) ,
+yes
+no
+Expr''
+oeq * + - oless odoubeq
+; ] ) ,
+yes
+no
+Expr_sec
+* + - oless odoubeq
+; ] ) ,
+yes
+no
+Var
+id
+
+no
+no
+Simple_expr'
+oless odoubeq
+; ] ) ,
+yes
+no
+Relop
+oless odoubeq
++ - ( num id
+no
+no
+Additive_expr'
++ -
+oless odoubeq ; ] ) ,
+yes
+no
+Additive_expr
++ - ( num id
+oless odoubeq ; ] ) ,
+no
+no
+Addop
++ -
++ - ( num id
+no
+no
+Term'
 *
-+ eof )
++ - oless odoubeq ; ] ) ,
 yes
 no
-F
-( id
-* + eof )
+Term
++ - ( num id
++ - oless odoubeq ; ] ) ,
 no
 no
-E
-( id
-eof )
+Signed_fact
++ - ( num id
+* + - oless odoubeq ; ] ) ,
+no
+no
+Fact
+( num id
+* + - oless odoubeq ; ] ) ,
+no
+no
+Conf_var_call
+id
+* + - oless odoubeq ; ] ) ,
+no
+no
+Conf_var_call'
+[ (
+* + - oless odoubeq ; ] ) ,
+yes
+no
+Var'
+[
+oeq * + - oless odoubeq ; ] ) ,
+yes
+no
+Call'
+(
+* + - oless odoubeq ; ] ) ,
+no
+no
+Args
++ - num ( id
+)
+yes
+no
+Expr
++ - num ( id
+; ] ) ,
+no
+no
+Arg_list'
+,
+)
+yes
+no
+Arg_list
++ - num ( id
+)
 no
 no

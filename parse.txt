@@ -1,28 +1,16 @@
-S
-|	E
-|	|	T
-|	|	|	F
-|	|	|	|	(
-|	|	|	|	E
-|	|	|	|	|	T
-|	|	|	|	|	|	F
-|	|	|	|	|	|	|	(
-|	|	|	|	|	|	|	E
-|	|	|	|	|	|	|	|	T
-|	|	|	|	|	|	|	|	|	F
-|	|	|	|	|	|	|	|	|	|	id
-|	|	|	|	|	|	|	|	|	T'
-|	|	|	|	|	|	|	|	|	|	epsilon
-|	|	|	|	|	|	|	|	E'
-|	|	|	|	|	|	|	|	|	epsilon
-|	|	|	|	|	|	|	)
-|	|	|	|	|	|	T'
-|	|	|	|	|	|	|	epsilon
-|	|	|	|	|	E'
-|	|	|	|	|	|	epsilon
-|	|	|	|	)
-|	|	|	T'
-|	|	|	|	epsilon
-|	|	E'
+Prg
+|	Decl_list
+|	|	Decl
+|	|	|	Type_spc
+|	|	|	|	int
+|	|	|	id
+|	|	|	Decl'
+|	|	|	|	Var_decl_suf
+|	|	|	|	|	Var_decl'
+|	|	|	|	|	|	[
+|	|	|	|	|	|	num
+|	|	|	|	|	|	]
+|	|	|	|	|	|	;
+|	|	Decl_list
 |	|	|	epsilon
 |	eof

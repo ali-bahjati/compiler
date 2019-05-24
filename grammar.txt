@@ -1,0 +1,47 @@
+Prg -> Decl_list eof.
+Decl_list -> Decl Decl_list | .
+Decl -> Type_spc id Decl'.
+Decl' -> Var_decl_suf | Fun_decl_suf.
+Var_decl_suf -> Var_decl'.
+Var_decl' -> ; | [ num ] ;.
+Type_spc -> int | void.
+Fun_decl_suf -> ( Params ) Compnd_stmt. 
+Params -> int id Param' Param_list' | void Params'.
+Params' -> id Param' Param_list' | .
+Param_list -> Param Param_list'.
+Param_list' -> , Param_list | .
+Param -> Type_spc id Param'.
+Param' -> [ ] | .
+Compnd_stmt -> { Decl_list Stmt_list }.
+Stmt_list -> Stmt Stmt_list | .
+Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
+Expr_stmt -> Expr ; | continue ; | break ; | ;.
+Sel_stmt -> if ( Expr ) Stmt else Stmt.
+Iter_stmt -> while ( Expr ) Stmt.
+Ret_stmt -> return Ret_stmt'.
+Ret_stmt' -> ; | Expr ;.
+Switch_stmt -> switch ( Expr ) { Case_stmts Def_stmt }.
+Case_stmts -> Case_stmt Case_stmts | .
+Case_stmt -> case num : Stmt_list.
+Def_stmt -> default : Stmt_list | .
+Expr_sec -> Term' Additive_expr' Simple_expr'. 
+Expr -> + Fact Expr_sec | - Fact Expr_sec | num Expr_sec | ( Expr ) Expr_sec | id Expr'.
+Expr' -> Call' Expr_sec | Var' Expr''.
+Expr'' -> oeq Expr | Expr_sec.
+Var -> id  Var'.
+Var' -> [ Expr ] | .
+Simple_expr' -> Relop Additive_expr | .
+Relop -> oless | odoubeq.
+Additive_expr -> Term Additive_expr'.
+Additive_expr' -> Addop Additive_expr | .
+Addop -> + | -.
+Term -> Signed_fact Term'.
+Term' -> * Term | .
+Signed_fact -> Fact | + Fact | - Fact.
+Fact -> ( Expr ) | Conf_var_call | num.
+Conf_var_call -> id Conf_var_call'.
+Conf_var_call' -> Var' | Call'.
+Call' -> ( Args ).
+Args -> Arg_list | .
+Arg_list -> Expr Arg_list'.
+Arg_list' -> , Arg_list | .
