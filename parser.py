@@ -13,7 +13,14 @@ list_scan = [
     ('NUM', '1323', 1),
     ('SYMBOL', ']', 1),
     ('SYMBOL', ';', 1),
-    ('EOF', 'eof', 2)
+    ('KEYWORD', 'void', 2),
+    ('ID', 'main', 2),
+    ('SYMBOL', '(', 2),
+    ('KEYWORD', 'void', 2),
+    ('SYMBOL', ')', 2),
+    ('SYMBOL', '{', 3),
+    ('SYMBOL', '}', 4),
+    ('EOF', 'eof', 5),
 ]
 
 

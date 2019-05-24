@@ -12,5 +12,25 @@ Prg
 |	|	|	|	|	|	]
 |	|	|	|	|	|	;
 |	|	Decl_list
-|	|	|	epsilon
+|	|	|	Decl
+|	|	|	|	Type_spc
+|	|	|	|	|	void
+|	|	|	|	id
+|	|	|	|	Decl'
+|	|	|	|	|	Fun_decl_suf
+|	|	|	|	|	|	(
+|	|	|	|	|	|	Params
+|	|	|	|	|	|	|	void
+|	|	|	|	|	|	|	Params'
+|	|	|	|	|	|	|	|	epsilon
+|	|	|	|	|	|	)
+|	|	|	|	|	|	Compnd_stmt
+|	|	|	|	|	|	|	{
+|	|	|	|	|	|	|	Decl_list
+|	|	|	|	|	|	|	|	epsilon
+|	|	|	|	|	|	|	Stmt_list
+|	|	|	|	|	|	|	|	epsilon
+|	|	|	|	|	|	|	}
+|	|	|	Decl_list
+|	|	|	|	epsilon
 |	eof
