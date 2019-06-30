@@ -1,0 +1,114 @@
+global num_in_AR
+global scope_number
+global fixed
+
+Prg -> Decl_list eof.
+Decl_list -> Decl Decl_list | .
+Decl -> #count_AR #sp_enc Type_spc #add_to_symbol_table id Decl'.
+Decl' -> Var_decl_suf | Fun_decl_suf.
+Var_decl_suf -> Var_decl'.
+Var_decl' -> ; | [ num ] ;.
+Type_spc -> int | void.
+Fun_decl_suf -> #set_count_AR_zero ( Params ) Compnd_stmt_begin_function. 
+
+Params -> #count_AR int id Param' Param_list' | void Params'.
+Params' -> id Param' Param_list' | .
+Param_list -> Param Param_list'.
+Param_list' -> , Param_list | .
+Param -> Type_spc id Param'.
+Param' -> [ ] | .
+
+Compnd_stmt_begin_function ->  { Decl_list Stmt_list }.
+Compnd_stmt -> #start_scope { Decl_list Stmt_list } #end_scope.
+Stmt_list -> Stmt Stmt_list | .
+Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
+Expr_stmt -> Expr ; | continue ; | break ; | ;.
+Sel_stmt -> if ( Expr ) Stmt else Stmt.
+Iter_stmt -> while ( Expr ) Stmt.
+Ret_stmt -> return #return Ret_stmt'.
+Ret_stmt' -> ; | Expr ;.
+Switch_stmt -> switch ( Expr ) { Case_stmts Def_stmt }.
+Case_stmts -> Case_stmt Case_stmts | .
+Case_stmt -> case num : Stmt_list.
+Def_stmt -> default : Stmt_list | .
+
+Expr_sec -> Term' Additive_expr' Simple_expr'. 
+Expr -> + Fact #adjust_sp Expr_sec | - Fact #adjust_sp Expr_sec | #gettemp_pid num Expr_sec | ( Expr ) Expr_sec | #pid id Expr'.
+Expr' -> Call' Expr_sec | Var' Expr''.
+Expr'' -> = Expr #assign_adjust_sp | Expr_sec.
+Var -> id  Var'.
+Var' -> [ Expr #find_address_aaray ] | .
+Simple_expr' -> Relop Additive_expr #relop | .
+Relop -> < | ==.
+Additive_expr -> Term Additive_expr'.
+Additive_expr' -> Addop Additive_expr #adjust_sp_add_or_minus | .
+Addop -> + | -.
+Term -> Signed_fact Term'.
+Term' -> * Term #adjust_sp_mult | .
+Signed_fact -> Fact #adjust_sp | + #push_1_to_ss Fact #adjust_sp_sign | - #push_minus_1_to_ss Fact #adjust_sp_sign.
+Fact -> ( Expr ) | Conf_var_call | #gettemp_pid num.
+Conf_var_call -> #pid id Conf_var_call'.
+Conf_var_call' -> Var' #push_0_to_ss | Call'.
+
+Call' -> ( Args ) #push_1_to_ss.
+Args -> Arg_list | .
+Arg_list -> Expr Arg_list'.
+Arg_list' -> , Arg_list | .
+
+#count_AR:
+num_in_AR ++
+
+#start_scope:
+scope_number ++
+
+#end_scope:
+scope_number --
+remove last scope
+
+#add_to_symbol_table:
+symbol_table.append( id, scope_number, num_in_AR)
+
+#sp_enc:
+sp++
+
+#set_count_AR_zero:
+num_in_AR = 0
+
+#return:
+symbol_table[current function].append(num_in_AR)
+PB[i++] <- (assign, sp - num_in_AR - 1, ss[top]);
+PB[i++] <- (sp -= (num_in_AR - 2))
+PB[i++] <- (jp, sp)
+
+#search_in_symbol_table:
+ss.push(address of the callee)
+ss.push(len of AR of the callee)
+
+#find_address_aaray:
+t <- gettemp
+t = @(ss[top - 1]) + ss[top]
+ss.pop(2)
+ss.push(t)
+
+#assign_adjust_sp:
+PB[i++] <- (assign, ss[top - 2], ss[top - 1])
+PB[i++] <- (sp -= ss[top])
+
+#push_1_to_ss:
+ss.push(1)
+
+#gettemp_pid:
+get a temporary, put the number in and push the address to the ss
+
+#relop:
+t <- gettemp
+PB[i++] <- (< | == , ss[top], ss[top - 1], t);
+ss.pop(2)
+ss.push(t)
+
+#adjust_sp_sign:
+PB[i++] <- (sp -= ss[top])
+t <- gettemp
+PB[i++] <- (* , ss[top], ss[top - 1], t);
+ss.pop(2)
+ss.push(t)
