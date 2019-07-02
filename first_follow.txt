@@ -73,6 +73,11 @@ Compnd_stmt
 case default else int void eof continue break ; { if while return switch + - num ( id }
 no
 no
+Compnd_stmt_function
+{
+case default else int void eof continue break ; { if while return switch + - num ( id }
+no
+no
 Expr_stmt
 continue break ; + - num ( id
 case default continue break ; { if while return switch + - num ( id else }

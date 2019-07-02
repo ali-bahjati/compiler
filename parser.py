@@ -1,5 +1,6 @@
 import logging
 from scanner import get_next_token_s
+from generator import process_actions
 
 logging.basicConfig(filename='parser.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.ERROR)
@@ -21,7 +22,7 @@ def get_next_token():
     if t[0] == 'KEYWORD' or t[0] == 'SYMBOL' or t[0] == 'EOF':
         ret['text'] = t[1]
     else:
-        ret['text'] = t[0].lower()
+        ret['text'] = t[0].lower()  # e.g: ID -> id
         ret['value'] = t[1]
 
     return ret
@@ -52,11 +53,13 @@ class Component:
 
 
 class Edge:
-    def __init__(self, from_node, to_node, tpe, symbol=''):
+    def __init__(self, from_node, to_node, tpe, symbol, actions: list, post_actions: list = None):
         self.symbol = symbol
         self.from_node = from_node
         self.to_node = to_node
         self.type = tpe
+        self.actions = actions
+        self.post_actions = post_actions
 
         # logger.info("New edge created:", from_node, to_node, tpe, symbol)
 
@@ -84,14 +87,24 @@ def build_diagram():
             logging.info(line)
 
             var_sym = line[0]
-            assert line[1] == '->', 'Line should start with Var and then ->. e.g: A -> blob blob'
+            assert line[1] == '->', f'Line should start with Var and then ->. e.g: A -> blob blob + {line}'
 
             line = line[2:]
 
-            if not line or line[-1] == '|':  # If a variable can be eps it should be it's last rule.
-                edge = Edge(start_state, accept_state, 'E', '')
-                start_state.out_edges.append(edge)
-                line = line[:-1]
+            def handle_eps(line):
+                i = len(line) - 1
+                actions = []
+                while i >= 0 and line[i][0] == '#':
+                    actions.append(line[i][1:])
+                    i -= 1
+
+                if i >= 0 and line[i] == '|':
+                    edge = Edge(start_state, accept_state, 'E', '', actions)
+                    start_state.out_edges.append(edge)
+                    line = line[:i]
+                return line
+
+            line = handle_eps(line)
 
             line += ['|']
 
@@ -100,23 +113,42 @@ def build_diagram():
             begin = True
 
             def t_type(text: str):
-                return 'V' if text[0].isupper() else 'T'
+                if text[0] == '#':
+                    return 'A'
+                elif text[0].isupper():
+                    return 'V'
+                else:
+                    return 'T'
+
+            actions_queue = []
+            final_actions = []
 
             for i, word in enumerate(line):
                 if line[i] == '|':
                     assert cur_text, 'Rule should not be empty'
-                    cur_state.out_edges.append(Edge(cur_state, accept_state, t_type(cur_text), cur_text))
+                    cur_state.out_edges.append(Edge(cur_state, accept_state, t_type(cur_text), cur_text, final_actions,
+                                                    actions_queue))
+                    actions_queue = []
+                    final_actions = []
                     begin = True
                 else:
-                    if begin:
-                        cur_state = start_state
-                        cur_text = word
-                        begin = False
+                    if t_type(word) == 'A':
+                        actions_queue.append(word[1:])
                     else:
-                        state = State()
-                        cur_state.out_edges.append(Edge(cur_state, state, t_type(cur_text), cur_text))
-                        cur_state = state
-                        cur_text = word
+                        if begin:
+                            cur_state = start_state
+                            cur_text = word
+                            final_actions = actions_queue
+                            actions_queue = []
+                            begin = False
+                        else:
+                            state = State()
+                            cur_state.out_edges.append(Edge(cur_state, state, t_type(cur_text),
+                                                            cur_text, final_actions))
+                            cur_state = state
+                            cur_text = word
+                            final_actions = actions_queue
+                            actions_queue = []
 
             comp = Component()
             comp.start_state = start_state
@@ -142,13 +174,19 @@ def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree)
 
         for edge in cur_state.out_edges:
             if edge.type == 'T' and edge.symbol == cur_token['text']:
+                process_actions(edge.actions, cur_token)
                 parse_tree.append([depth, edge.symbol])
-                cur_state = edge.to_node
                 cur_token = get_next_token()
+                if edge.post_actions:
+                    process_actions(edge.post_actions, cur_token)
+                cur_state = edge.to_node
                 match = True
                 break
             if edge.type == 'V' and cur_token['text'] in dic_first[edge.symbol]:
+                process_actions(edge.actions, cur_token)
                 cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
+                if edge.post_actions:
+                    process_actions(edge.post_actions, cur_token)
                 cur_state = edge.to_node
                 match = True
                 break
@@ -158,7 +196,10 @@ def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree)
 
         for edge in cur_state.out_edges:
             if edge.type == 'V' and dic_nullable[edge.symbol] and cur_token['text'] in dic_follow[edge.symbol]:
+                process_actions(edge.actions, cur_token)
                 cur_token, parse_tree = recursive_parse(dic_components[edge.symbol], cur_token, depth, parse_tree)
+                if edge.post_actions:
+                    process_actions(edge.post_actions, cur_token)
                 cur_state = edge.to_node
                 match = True
                 break
@@ -169,6 +210,7 @@ def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree)
         for edge in cur_state.out_edges:
             if edge.type == 'E' and cur_token['text'] in dic_follow[cur_component.symbol]:
                 parse_tree.append([depth, 'epsilon'])
+                process_actions(edge.actions, cur_token)
                 cur_state = edge.to_node  # It should go to final state
                 assert cur_state == cur_component.accept_state, 'After going through eps should always reach accept'
                 match = True
