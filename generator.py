@@ -376,9 +376,6 @@ class Proc:
             logger.error(f"Line {token['line']}: Undeclared variable {name}. {name} is a function")
             assert False
 
-        if entry['type'] in ['indarr', 'var']:
-            logger.warning(f"Line {token['line']}: Accessing array pointer")
-
         Proc._add_code([Lang.add(Proc.TR, Proc.AP, '#1')])  # To access link
 
         for i in range(Proc.curr_func_scope - entry['func_scope']):
@@ -391,12 +388,13 @@ class Proc:
             Proc.func_tmp_off[-1] += 1
             Proc.scope_tmps[Proc.curr_scope] += 1
 
-            Proc._add_code([Lang.sub(Proc.TR, f"@{Proc.TP}", '#1')])
+            Proc._add_code([Lang.sub(Proc.TR, Proc.TP, '#1')])
 
         Proc.sem_st.append(Proc.func_tmp_off[-1])
         Proc.func_tmp_off[-1] += 1
         Proc.scope_tmps[Proc.curr_scope] += 1
         Proc._add_code(Proc._push_tp(Proc.TR))
+
 
     @staticmethod
     def pval(token):
@@ -408,9 +406,16 @@ class Proc:
 
     @staticmethod
     def parr(token):
-        # TODO Write after testing var
-        # TODO Include array bound checking
-        pass
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR)
+        Proc._move_temp(Proc.sem_st.pop(), Proc.BR)
+        Proc._add_code([
+            Lang.assign(Proc.BR, f'@{Proc.BR}'),
+            Lang.add(Proc.TR, Proc.AR, Proc.BR)
+        ] + Proc._push_tp(Proc.TR))
+
+        Proc.sem_st.append(Proc.func_tmp_off[-1])
+        Proc.func_tmp_off[-1] += 1
+        Proc.scope_tmps[Proc.curr_scope] += 1
 
     @staticmethod
     def pfunc(token):

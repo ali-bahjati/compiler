@@ -3,7 +3,7 @@ Decl_list -> Decl Decl_list | .
 Decl -> Type_spc #decl_save_id id Decl'.
 Decl' -> Var_decl_suf | Fun_decl_suf.
 Var_decl_suf -> Var_decl'.
-Var_decl' -> #decl_var_inc_sp #decl_save_var ; | [ #decl_save_num num ] #decl_arr_inc_sp #decl_save_array #decl_arr_inc_sp ;.
+Var_decl' -> #decl_var_inc_sp #decl_save_var ; | [ #decl_save_num num ] #decl_arr_inc_sp #decl_save_arr ;.
 Type_spc -> #decl_save_type int | #decl_save_type void.
 Fun_decl_suf -> #scope_begin #scope_func_begin #func_reset_param ( Params ) #decl_func_inc_sp #decl_save_func Compnd_stmt_function #scope_end #func_finalize #scope_func_end.
 Params -> #func_inc_param #decl_save_type int #decl_save_id id Param' Param_list' | #decl_save_type void Params'.
@@ -29,7 +29,7 @@ Expr_sec -> Term' Additive_expr' Simple_expr'.
 Expr -> + Fact Expr_sec | - Fact #eneg Expr_sec | #pnum num Expr_sec | ( Expr ) Expr_sec | #pname id Expr'.
 Expr' -> Call' Expr_sec | Var' Expr''.
 Expr'' -> = Expr #assign #pval | #pval Expr_sec.
-Var' -> [ Expr ] #parr | #pvar.
+Var' -> #pvar [ Expr ] #parr | #pvar.
 Simple_expr' -> #esym Relop Additive_expr #ecalc | .
 Relop -> < | ==.
 Additive_expr -> Term Additive_expr'.

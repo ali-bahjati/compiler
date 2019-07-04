@@ -1,7 +1,35 @@
-void f(int a, int b) {
-    output(a + b);
-    f(b, a + b);
+int fact(int n) {
+    if(n == 0) {
+        return 1;
+    } else {
+        return n * fact(n-1);
+    }
+}
+int pow(int a, int b) {
+    if (b == 0) {
+        return 1;
+    } else {
+        return pow(a, b-1) * a;
+    }
+}
+void pr(int a[], int i) {
+    output(a[i]);
+    if (i == 0) {
+        return;
+    } else {
+        pr(a, i-1);
+    }
 }
 void main(void) {
-    f(1, 1);
+    int res;
+    int a[3];
+    output(fact(4));
+    res = pow(3, 4);
+    output(res);
+    a[1] = 3;
+    a[2] = a[1] * 4;
+    output(a[0]);
+    output(a[1]);
+    output(a[2]);
+    pr(a, 2);
 }
