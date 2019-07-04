@@ -321,9 +321,13 @@ class Proc:
     def scope_end(token):
         Proc._add_code(Proc._pop_sp(len(Proc.scope_syms[Proc.curr_scope])))
         for name in Proc.scope_syms[Proc.curr_scope]:
+            if Proc.sym_dict[name][-1]['type'] == 'arr':
+                Proc.func_lv_off[-1] -= Proc.sym_dict[name][-1]['size']
+            else:
+                Proc.func_lv_off[-1] -= 1
+
             Proc.sym_dict[name].pop()
 
-        Proc.func_lv_off[-1] -= len(Proc.scope_syms[Proc.curr_scope])
         Proc.scope_syms[Proc.curr_scope] = []
 
         Proc._add_code(Proc._pop_tp(Proc.scope_tmps[Proc.curr_scope]))
