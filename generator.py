@@ -17,7 +17,7 @@ class Lang:
         return f"(ADD, {b}, {c}, {a})"
 
     @staticmethod
-    def mult(a, b, c):
+    def mul(a, b, c):
         return f"(MULT, {b}, {c}, {a})"
 
     @staticmethod
@@ -25,8 +25,24 @@ class Lang:
         return f"(SUB, {b}, {c}, {a})"
 
     @staticmethod
+    def lt(a, b, c):
+        return f"(LT, {b}, {c}, {a})"
+
+    @staticmethod
+    def eq(a, b, c):
+        return f"(EQ, {b}, {c}, {a})"
+
+    @staticmethod
     def jump(addr):
         return f"(JP, {addr}, , )"
+
+    @staticmethod
+    def jumpfalse(a, addr):
+        return f"(JPF, {a}, {addr}, )"
+
+    @staticmethod
+    def notop(a, b):
+        return f"(NOT, {b}, {a}, )"
 
     @staticmethod
     def print(addr):
@@ -329,7 +345,8 @@ class Proc:
             Lang.add(Proc.SP, Proc.AP, "#5"),
             Lang.sub(Proc.TP, Proc.TP, f"#{Proc.func_tmp_off[-1]}"),
             Lang.add(Proc.TR, Proc.AP, '#3'),
-            Lang.jump(f"@{Proc.TR}")
+            Lang.assign(Proc.AR, f'@{Proc.TR}'),
+            Lang.jump(f"@{Proc.AR}")
         ])
 
     @staticmethod
@@ -383,8 +400,8 @@ class Proc:
 
     @staticmethod
     def pval(token):
+        Proc._move_temp(Proc.sem_st[-1], Proc.TR, False)
         Proc._add_code([
-            Lang.sub(Proc.TR, Proc.TP, '#1'),
             Lang.assign(Proc.BR, f'@{Proc.TR}'),
             Lang.assign(f'@{Proc.TR}', f'@{Proc.BR}')
         ])
@@ -419,13 +436,12 @@ class Proc:
         print(Proc.sem_st)
 
     @staticmethod
-    def _move_temp(rel, dest):
+    def _move_temp(rel, dest, direct=True):
         assert isinstance(rel, int)
         Proc._add_code([
             Lang.add(dest, Proc.AP, '#2'),
-            Lang.add(dest, f'@{dest}', f'#{rel}'),
-            Lang.assign(dest, f'@{dest}')
-        ])
+            Lang.add(dest, f'@{dest}', f'#{rel}')
+        ] + ([Lang.assign(dest, f'@{dest}')] if direct else []))
 
     @staticmethod
     def func_add_arg(token):
@@ -509,13 +525,70 @@ class Proc:
         op = Proc.sem_st.pop()
         Proc._move_temp(Proc.sem_st.pop(), Proc.BR)
 
-        calc_fun = Lang.add if op == '+' else Lang.sub if op == '-' else Lang.mul
+        op_list = {
+            '+': Lang.add,
+            '-': Lang.sub,
+            '*': Lang.mul,
+            '<': Lang.lt,
+            '==': Lang.eq
+        }
+        calc_fun = op_list[op]
         Proc._add_code([calc_fun(Proc.TR, Proc.BR, Proc.AR)] + Proc._push_tp(Proc.TR))
 
         Proc.sem_st.append(Proc.func_tmp_off[-1])
 
         Proc.func_tmp_off[-1] += 1
         Proc.scope_tmps[Proc.curr_scope] += 1
+
+    @staticmethod
+    def eneg(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR)
+        Proc._add_code([
+                            Lang.sub(Proc.TR, '#0', Proc.AR)
+                       ]
+                       + Proc._push_tp(Proc.TR))
+
+        Proc.sem_st.append(Proc.func_tmp_off[-1])
+
+        Proc.func_tmp_off[-1] += 1
+        Proc.scope_tmps[Proc.curr_scope] += 1
+
+    @staticmethod
+    def assign(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR)
+        Proc._move_temp(Proc.sem_st[-1], Proc.TR)
+        Proc._add_code([
+            Lang.assign(f'@{Proc.TR}', Proc.AR)
+        ])
+
+    @staticmethod
+    def return_expr(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR, direct=False)
+        Proc._add_code([
+            Lang.add(Proc.TR, Proc.AP, '#4'),
+            Lang.assign(f"@{Proc.TR}", Proc.AR)
+        ])
+
+    @staticmethod
+    def ifbeg(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR)
+        Proc.sem_st.append(Proc.curr_code_line)
+        Proc._add_code([
+            Lang.jumpfalse(Proc.AR, '{}')
+        ])
+
+    @staticmethod
+    def ifmid(token):
+        line = Proc.sem_st.pop()
+        Proc.code[line] = Proc.code[line].format(Proc.curr_code_line+1)
+
+        Proc.sem_st.append(Proc.curr_code_line)
+        Proc._add_code([Lang.jump('{}')])
+
+    @staticmethod
+    def ifend(token):
+        line = Proc.sem_st.pop()
+        Proc.code[line] = Proc.code[line].format(Proc.curr_code_line)
 
 
 def process_actions(action_list : list, curr_token):

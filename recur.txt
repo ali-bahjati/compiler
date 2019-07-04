@@ -1,0 +1,20 @@
+int fact(int n) {
+    if(n == 0) {
+        return 1;
+    } else {
+        return n * fact(n-1);
+    }
+}
+int pow(int a, int b) {
+    if (b == 0) {
+        return 1;
+    } else {
+        return pow(a, b-1) * a;
+    }
+}
+void main(void) {
+    int res;
+    output(fact(4));
+    res = pow(3, 4);
+    output(res);
+}

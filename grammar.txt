@@ -17,27 +17,27 @@ Compnd_stmt -> #scope_begin { Decl_list Stmt_list } #scope_end.
 Stmt_list -> Stmt Stmt_list | .
 Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
 Expr_stmt -> Expr #pop_sem_st ; | continue ; | break ; | ;.
-Sel_stmt -> if ( Expr ) Stmt else Stmt.
+Sel_stmt -> if ( Expr ) #ifbeg Stmt #ifmid else Stmt #ifend.
 Iter_stmt -> while ( Expr ) Stmt.
 Ret_stmt -> return Ret_stmt'.
-Ret_stmt' -> #return_check_void #func_finalize ; | Expr 	#return_expr #func_finalize ;.
+Ret_stmt' -> #func_finalize ; | Expr #return_expr #func_finalize ;.
 Switch_stmt -> switch ( Expr ) { Case_stmts Def_stmt }.
 Case_stmts -> Case_stmt Case_stmts | .
 Case_stmt -> case num : Stmt_list.
 Def_stmt -> default : Stmt_list | .
 Expr_sec -> Term' Additive_expr' Simple_expr'.
-Expr -> + Fact Expr_sec | - Fact Expr_sec | #pnum num Expr_sec | ( Expr ) Expr_sec | #pname id Expr'.
+Expr -> + Fact Expr_sec | - Fact #eneg Expr_sec | #pnum num Expr_sec | ( Expr ) Expr_sec | #pname id Expr'.
 Expr' -> Call' Expr_sec | Var' Expr''.
-Expr'' -> = Expr | #pval Expr_sec.
+Expr'' -> = Expr #assign #pval | #pval Expr_sec.
 Var' -> [ Expr ] #parr | #pvar.
-Simple_expr' -> Relop Additive_expr | .
+Simple_expr' -> #esym Relop Additive_expr #ecalc | .
 Relop -> < | ==.
 Additive_expr -> Term Additive_expr'.
 Additive_expr' -> #esym Addop Additive_expr #ecalc | .
 Addop -> + | -.
 Term -> Signed_fact Term'.
 Term' -> #esym * Term #ecalc | .
-Signed_fact -> Fact | + Fact | - Fact.
+Signed_fact -> Fact | + Fact | - Fact #eneg.
 Fact -> ( Expr ) | Conf_var_call | #pnum num.
 Conf_var_call -> #pname id Conf_var_call'.
 Conf_var_call' -> Var' #pval | Call'.
