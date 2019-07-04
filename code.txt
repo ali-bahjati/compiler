@@ -1,9 +1,7 @@
-int f(int a, int b){
-    void g(void) {
-           output(5);
-    }
-    g();
+void f(int a, int b) {
+    output(a + b);
+    f(b, a + b);
 }
 void main(void) {
-    f(4, 10);
+    f(1, 1);
 }

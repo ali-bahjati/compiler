@@ -420,6 +420,7 @@ class Proc:
 
     @staticmethod
     def _move_temp(rel, dest):
+        assert isinstance(rel, int)
         Proc._add_code([
             Lang.add(dest, Proc.AP, '#2'),
             Lang.add(dest, f'@{dest}', f'#{rel}'),
@@ -509,11 +510,11 @@ class Proc:
         Proc._move_temp(Proc.sem_st.pop(), Proc.BR)
 
         calc_fun = Lang.add if op == '+' else Lang.sub if op == '-' else Lang.mul
-        Proc._add_code([calc_fun(Proc.TR, Proc.TR, Proc.TR)] + Proc._push_tp(Proc.TR))
+        Proc._add_code([calc_fun(Proc.TR, Proc.BR, Proc.AR)] + Proc._push_tp(Proc.TR))
 
-        Proc.sem_st.append(Proc.func_lv_off)
+        Proc.sem_st.append(Proc.func_tmp_off[-1])
 
-        Proc.func_lv_off[-1] += 1
+        Proc.func_tmp_off[-1] += 1
         Proc.scope_tmps[Proc.curr_scope] += 1
 
 

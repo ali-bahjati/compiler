@@ -40,7 +40,7 @@ Term' -> #esym * Term #ecalc | .
 Signed_fact -> Fact | + Fact | - Fact.
 Fact -> ( Expr ) | Conf_var_call | #pnum num.
 Conf_var_call -> #pname id Conf_var_call'.
-Conf_var_call' -> Var' | Call'.
+Conf_var_call' -> Var' #pval | Call'.
 Call' -> #pfunc ( Args ) #func_call #func_ret.
 Args -> Arg_list | .
 Arg_list -> Expr #func_add_arg Arg_list'.
