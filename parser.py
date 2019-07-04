@@ -1,9 +1,9 @@
 import logging
 from scanner import get_next_token_s
-from generator import process_actions
+from generator import process_actions, print_code
 
 logging.basicConfig(filename='parser.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s',
-                    level=logging.ERROR)
+                    level=logging.INFO)
 # logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('Parser')
 
@@ -84,7 +84,7 @@ def build_diagram():
             line = line.strip()[:-1].split()  # remove dot(.) in the end of line
             start_state = State()
             accept_state = State(accept=True)
-            logging.info(line)
+            logger.info(line)
 
             var_sym = line[0]
             assert line[1] == '->', f'Line should start with Var and then ->. e.g: A -> blob blob + {line}'
@@ -163,7 +163,7 @@ dic_components, dic_first, dic_follow, dic_nullable, start_symbol = build_diagra
 
 
 def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree):
-    logging.info(f"Entering {cur_component} with {cur_token}")
+    logger.info(f"Entering {cur_component} with {cur_token}")
     cur_state: State = cur_component.start_state
 
     parse_tree.append([depth, cur_component.symbol])
@@ -245,7 +245,7 @@ def recursive_parse(cur_component: Component, cur_token, depth: int, parse_tree)
                 logger.error(f"#{cur_token['line']}: Syntax Error! Missing {edge.symbol} description")
                 cur_state = edge.to_node
 
-    logging.info(f"Returning {cur_component} with {cur_token}")
+    logger.info(f"Returning {cur_component} with {cur_token}")
 
     return cur_token, parse_tree
 
@@ -264,3 +264,4 @@ def parse():
 
 
 parse()
+print_code()

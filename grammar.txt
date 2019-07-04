@@ -1,22 +1,22 @@
-Prg -> Decl_list eof.
+Prg -> Decl_list #handle_main eof.
 Decl_list -> Decl Decl_list | .
 Decl -> Type_spc #decl_save_id id Decl'.
 Decl' -> Var_decl_suf | Fun_decl_suf.
 Var_decl_suf -> Var_decl'.
-Var_decl' -> #decl_save_var ; | [ #decl_save_num num ] #decl_save_array ;.
+Var_decl' -> #decl_var_inc_sp #decl_save_var ; | [ #decl_save_num num ] #decl_arr_inc_sp #decl_save_array #decl_arr_inc_sp ;.
 Type_spc -> #decl_save_type int | #decl_save_type void.
-Fun_decl_suf -> #scope_begin #func_reset_param ( Params ) #decl_save_func #scope_fun_begin Compnd_stmt_function #scope_func_end #scope_end #func_finalize. 
+Fun_decl_suf -> #scope_begin #scope_func_begin #func_reset_param ( Params ) #decl_func_inc_sp #decl_save_func Compnd_stmt_function #scope_end #func_finalize #scope_func_end.
 Params -> #func_inc_param #decl_save_type int #decl_save_id id Param' Param_list' | #decl_save_type void Params'.
-Params' -> #decl_save_id id Param' Param_list' | .
+Params' -> #decl_save_id id Param' Param_list' | #decl_pop.
 Param_list -> Param Param_list'.
 Param_list' -> , Param_list | .
-Param -> Type_spc #decl_save_id id Param'.
-Param' -> [ ] #decl_save_func_array | #decl_save_var .
+Param -> #func_inc_param Type_spc #decl_save_id id Param'.
+Param' -> [ ] #decl_save_func_arr | #decl_save_var .
 Compnd_stmt_function -> { Decl_list Stmt_list }.
 Compnd_stmt -> #scope_begin { Decl_list Stmt_list } #scope_end.
 Stmt_list -> Stmt Stmt_list | .
 Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
-Expr_stmt -> Expr ; | continue ; | break ; | ;.
+Expr_stmt -> Expr #pop_sem_st ; | continue ; | break ; | ;.
 Sel_stmt -> if ( Expr ) Stmt else Stmt.
 Iter_stmt -> while ( Expr ) Stmt.
 Ret_stmt -> return Ret_stmt'.
@@ -26,23 +26,22 @@ Case_stmts -> Case_stmt Case_stmts | .
 Case_stmt -> case num : Stmt_list.
 Def_stmt -> default : Stmt_list | .
 Expr_sec -> Term' Additive_expr' Simple_expr'.
-Expr -> + Fact #adjust_sp Expr_sec | - Fact #adjust_sp Expr_sec | #gettemp_pid num Expr_sec | ( Expr ) Expr_sec | #pid id Expr'.
+Expr -> + Fact Expr_sec | - Fact Expr_sec | #pnum num Expr_sec | ( Expr ) Expr_sec | #pname id Expr'.
 Expr' -> Call' Expr_sec | Var' Expr''.
-Expr'' -> = Expr #assign_adjust_sp | Expr_sec.
-Var -> id  Var'.
-Var' -> [ Expr #find_address_aaray ] | .
-Simple_expr' -> Relop Additive_expr #relop | .
+Expr'' -> = Expr | #pval Expr_sec.
+Var' -> [ Expr ] #parr | #pvar.
+Simple_expr' -> Relop Additive_expr | .
 Relop -> < | ==.
 Additive_expr -> Term Additive_expr'.
-Additive_expr' -> Addop Additive_expr #adjust_sp_add_or_minus | .
+Additive_expr' -> Addop Additive_expr | .
 Addop -> + | -.
 Term -> Signed_fact Term'.
-Term' -> * Term #adjust_sp_mult | .
-Signed_fact -> Fact #adjust_sp | + #push_1_to_ss Fact #adjust_sp_sign | - #push_minus_1_to_ss Fact #adjust_sp_sign.
-Fact -> ( Expr ) | Conf_var_call | #gettemp_pid num.
-Conf_var_call -> #pid id Conf_var_call'.
-Conf_var_call' -> Var' #push_0_to_ss | Call'.
-Call' -> ( Args ) #push_1_to_ss.
+Term' -> * Term | .
+Signed_fact -> Fact | + Fact | - Fact.
+Fact -> ( Expr ) | Conf_var_call | num.
+Conf_var_call -> #pname id Conf_var_call'.
+Conf_var_call' -> Var' | Call'.
+Call' -> #pfunc ( Args ) #func_call #func_ret.
 Args -> Arg_list | .
-Arg_list -> Expr Arg_list'.
+Arg_list -> Expr #func_add_arg Arg_list'.
 Arg_list' -> , Arg_list | .
