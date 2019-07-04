@@ -17,6 +17,10 @@ class Lang:
         return f"(ADD, {b}, {c}, {a})"
 
     @staticmethod
+    def mult(a, b, c):
+        return f"(MULT, {b}, {c}, {a})"
+
+    @staticmethod
     def sub(a, b, c):
         return f"(SUB, {b}, {c}, {a})"
 
@@ -30,18 +34,31 @@ class Lang:
 
 
 class Proc:
-    BASE = 100
+    BASE = 1000
     CODE_START = 0
-    PTR_START = 10 * BASE
-    DATA_START = 20 * BASE
-    TEMP_START = 30 * BASE
-    MAX_LINES = 40 * BASE
+    PTR_START = BASE
+    DATA_START = 2 * BASE
+    TEMP_START = 3 * BASE
+    MAX_LINES = 4 * BASE
 
     SP = PTR_START + 0
     TP = PTR_START + 1
     AP = PTR_START + 2  # Activity Record Pointer
     TR = PTR_START + 3  # Temp Register
-    BR = PTR_START + 4  # Temp B Register
+    AR = PTR_START + 4  # Temp A Register
+    BR = PTR_START + 5  # Temp B Register
+
+    """
+    Activity Record
+    It is:
+        Control Link
+        Action Link
+        Temp Pointer
+        Return Address
+        Return Value
+        <args>
+        <local variables>
+    """
 
     """
     Symbol Dictionary 
@@ -51,8 +68,8 @@ class Proc:
     each occ is a dict with names
     - (type:'var', func_scope, scope, addr)
     - (type:'arr' , func_scope, scope, addr, size)
-    - (type:'indarr', func_scope, scope, rel_addr) Indirect Array (only function parameter)
-    - (type:'func', func_scope, scope, direct_addr, argc, ret)
+    - (type:'indarr', func_scope, scope, addr) Indirect Array (only function parameter)
+    - (type:'func', func_scope, scope, addr, argc, ret)
     - (type:'special') -> for output function
     """
     sym_dict = defaultdict(list, {
@@ -78,7 +95,7 @@ class Proc:
 
     @staticmethod
     def init():
-        Proc.curr_code_line += Proc._add(Proc.curr_code_line, [
+        Proc._add_code([
             Lang.assign(Proc.TP, f"#{Proc.TEMP_START}"),
             Lang.assign(Proc.AP, f"#{Proc.DATA_START}"),
             Lang.add(Proc.TR, Proc.AP, '#2'),
@@ -107,7 +124,7 @@ class Proc:
 
     @staticmethod
     def _add_code(commands: list):
-        Proc.curr_code_line += Proc._add(Proc.curr_code_line, commands)
+        Proc.curr_code_line += Proc._add(Proc.curr_code_line, commands) + 1
 
     @staticmethod
     def _push(var, val):
@@ -343,7 +360,7 @@ class Proc:
             assert False
 
         if entry['type'] in ['indarr', 'var']:
-            logger.info(f"Line {token['line']}: Accessing array pointer")
+            logger.warning(f"Line {token['line']}: Accessing array pointer")
 
         Proc._add_code([Lang.add(Proc.TR, Proc.AP, '#1')])  # To access link
 
@@ -395,8 +412,7 @@ class Proc:
         Proc._add_code([Lang.add(Proc.TR, Proc.AP, '#1')] +
                        [Lang.assign(Proc.TR, f"@{Proc.TR}") for i in range(Proc.curr_func_scope -
                                                                            entry['func_scope'])] +
-                       Proc._push_sp('#0'))
-        Proc._add_code(Proc._push_sp(Proc.TP))
+                        Proc._push_sp(Proc.TR) + Proc._push_sp('#0'))
         Proc._add_code(Proc._push_sp('#0') + Proc._push_sp('#0'))
 
         Proc.sem_st.append(0)
@@ -423,7 +439,7 @@ class Proc:
 
         entry = Proc.sym_dict[name][-1]
         if argc != entry['argc']:
-            logger.error(f"Line {token['line']}: {argc} argument provided but {entry['argc']} required.")
+            logger.error(f"Line {token['line']}: {argc} arguments provided but {entry['argc']} required.")
             assert False
 
         if entry['type'] == 'func':
@@ -432,7 +448,7 @@ class Proc:
                 Lang.add(Proc.TR, Proc.AP, '#2'),
                 Lang.assign(f'@{Proc.TR}', Proc.TP),
                 Lang.add(Proc.TR, Proc.AP, '#3'),
-                Lang.assign(f'@{Proc.TR}', f'#{Proc.curr_code_line + 4}'),
+                Lang.assign(f'@{Proc.TR}', f'#{Proc.curr_code_line + 6}'),
                 Lang.jump(entry['addr'])
             ])
         elif name == 'output':
@@ -451,7 +467,7 @@ class Proc:
         name = Proc.sem_st.pop()
         entry = Proc.sym_dict[name][-1]
 
-        if entry['ret'] == int:
+        if entry['ret'] == 'int':
             Proc._add_code(
                 [Lang.add(Proc.TR, Proc.AP, '#4'),
                  Lang.assign(Proc.TR, f'@{Proc.TR}')] +
@@ -482,6 +498,24 @@ class Proc:
         Proc.func_call(token)
         Proc.func_ret(token)
 
+    @staticmethod
+    def esym(token):
+        Proc.sem_st.append(token['text'])
+
+    @staticmethod
+    def ecalc(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.AR)
+        op = Proc.sem_st.pop()
+        Proc._move_temp(Proc.sem_st.pop(), Proc.BR)
+
+        calc_fun = Lang.add if op == '+' else Lang.sub if op == '-' else Lang.mul
+        Proc._add_code([calc_fun(Proc.TR, Proc.TR, Proc.TR)] + Proc._push_tp(Proc.TR))
+
+        Proc.sem_st.append(Proc.func_lv_off)
+
+        Proc.func_lv_off[-1] += 1
+        Proc.scope_tmps[Proc.curr_scope] += 1
+
 
 def process_actions(action_list : list, curr_token):
     logger.info( f"{action_list} {curr_token}")
@@ -496,6 +530,8 @@ def process_actions(action_list : list, curr_token):
     print(curr_token)
     print(Proc.sem_st)
     print(Proc.sym_dict)
+    print(Proc.curr_scope, Proc.curr_func_scope)
+    print(Proc.scope_syms, Proc.scope_tmps)
     return
 
 
