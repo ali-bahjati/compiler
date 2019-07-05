@@ -50,7 +50,7 @@ class Lang:
 
 
 class Proc:
-    BASE = 1000
+    BASE = 500000
     CODE_START = 0
     PTR_START = BASE
     DATA_START = 2 * BASE

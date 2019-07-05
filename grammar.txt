@@ -18,7 +18,7 @@ Stmt_list -> Stmt Stmt_list | .
 Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
 Expr_stmt -> Expr #pop_sem_st ; | continue #scope_cont_end #while_cont ; | break #scope_break_end #handle_break ; | ;.
 Sel_stmt -> if ( Expr ) #ifbeg #scope_begin Stmt #scope_end #ifmid else #scope_begin Stmt #scope_end #ifend.
-Iter_stmt -> while #scope_simul_beg #saveaddr #scope_begin ( Expr ) #while_beg Stmt #scope_end #while_end.
+Iter_stmt -> while #scope_simul_beg #saveaddr #scope_begin ( Expr ) #scope_end #scope_begin #while_beg Stmt #scope_end #while_end.
 Ret_stmt -> return Ret_stmt'.
 Ret_stmt' -> #func_finalize ; | Expr #return_expr #func_finalize ;.
 Switch_stmt -> switch ( Expr ) #switch_beg #scope_begin { Case_stmts Def_stmt } #scope_end #switch_end.
