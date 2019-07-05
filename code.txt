@@ -1,10 +1,17 @@
 void main(void) {
     int i;
-    i = 10;
-    while ( 1 ) {
-        i = i - 1;
-        if( i == 4 ) continue; else;
-        output(i);
-        if (i == 0) break; else;
+    i = 4;
+    switch(i) {
+     case 2:
+        output(3);
+     case 3:
+        output(-1);
+        break;
+     case 4:
+        output(444);
+     case 1:
+        output(1);
+     default:
+        output(0);
     }
 }

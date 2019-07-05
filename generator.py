@@ -110,6 +110,7 @@ class Proc:
     func_jump_st: list = []
 
     loop_stack = []
+    break_stack = []
 
     @staticmethod
     def init():
@@ -362,7 +363,6 @@ class Proc:
         Proc.sem_st.append(Proc.func_tmp_off[-1])
         Proc.func_tmp_off[-1] += 1
         Proc.scope_tmps[Proc.curr_scope] += 1
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$ ', Proc.func_tmp_off)
 
     @staticmethod
     def pname(token):
@@ -617,8 +617,8 @@ class Proc:
         ])
 
     @staticmethod
-    def while_br(token):
-        Proc.loop_stack[-1]['end_st'].append(Proc.curr_code_line)
+    def handle_break(token):
+        Proc.break_stack[-1]['end_st'].append(Proc.curr_code_line)
         Proc._add_code([Lang.jump('{}')])
 
     @staticmethod
@@ -633,6 +633,10 @@ class Proc:
         for item in entry['end_st']:
             Proc.code[item] = Proc.code[item].format(Proc.curr_code_line)
 
+        entry = Proc.break_stack.pop()
+        for item in entry['end_st']:
+            Proc.code[item] = Proc.code[item].format(Proc.curr_code_line)
+
     @staticmethod
     def scope_simul_beg(token):
         Proc._add_code(Proc._push_tp(Proc.SP) +
@@ -643,14 +647,87 @@ class Proc:
             'SP': Proc.func_tmp_off[-1],
             'TP': Proc.func_tmp_off[-1] + 1,
         })
+        Proc.break_stack.append({
+            'SP': Proc.func_tmp_off[-1],
+            'TP': Proc.func_tmp_off[-1] + 1,
+            'end_st': []
+        })
 
         Proc.func_tmp_off[-1] += 2
         Proc.scope_tmps[Proc.curr_scope] += 2
 
     @staticmethod
-    def scope_simul_end(token):  # For break and continue
+    def scope_cont_end(token):  # For break and continue
         Proc._move_temp(Proc.loop_stack[-1]['TP'], Proc.TP)
         Proc._move_temp(Proc.loop_stack[-1]['SP'], Proc.SP)
+
+    @staticmethod
+    def scope_break_end(token):  # For break and continue
+        Proc._move_temp(Proc.break_stack[-1]['TP'], Proc.TP)
+        Proc._move_temp(Proc.break_stack[-1]['SP'], Proc.SP)
+
+    @staticmethod
+    def switch_beg(token):
+        Proc._add_code(Proc._push_tp(Proc.SP) +
+                       [Lang.add(Proc.TR, Proc.TP, '#1')]
+                       + Proc._push_tp(Proc.TR))
+
+        Proc.break_stack.append({
+            'SP': Proc.func_tmp_off[-1],
+            'TP': Proc.func_tmp_off[-1] + 1,
+            'end_st': []
+        })
+
+        Proc.func_tmp_off[-1] += 2
+        Proc.scope_tmps[Proc.curr_scope] += 2
+
+        Proc.sem_st.append(-1)
+
+    @staticmethod
+    def switch_end(token):
+        entry = Proc.break_stack.pop()
+        for item in entry['end_st']:
+            Proc.code[item] = Proc.code[item].format(Proc.curr_code_line)
+
+        prev_line = Proc.sem_st.pop()  # for line
+        if prev_line != -1:
+            Proc.code[prev_line] = Proc.code[prev_line].format(Proc.curr_code_line)
+
+        Proc.sem_st.pop()  # for expression
+
+    @staticmethod
+    def switch_case_beg(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.BR)
+
+        prev_line = Proc.sem_st.pop()
+
+        Proc._move_temp(Proc.sem_st[-1], Proc.AR)
+        Proc._add_code([Lang.eq(Proc.TR, Proc.AR, Proc.BR)])
+        Proc.sem_st.append(Proc.curr_code_line)
+        Proc._add_code([Lang.jumpfalse(Proc.TR, '{}')])
+
+        if prev_line != -1:
+            Proc.code[prev_line] = Proc.code[prev_line].format(Proc.curr_code_line)
+
+    @staticmethod
+    def switch_case_end(token):
+        line = Proc.sem_st.pop()
+
+        Proc.sem_st.append(Proc.curr_code_line)
+        Proc._add_code([Lang.jump('{}')])
+
+        Proc.code[line] = Proc.code[line].format(Proc.curr_code_line)
+
+    @staticmethod
+    def switch_default_beg(token):
+        prev_line = Proc.sem_st.pop()
+        if prev_line != -1:
+            Proc.code[prev_line] = Proc.code[prev_line].format(Proc.curr_code_line)
+
+    @staticmethod
+    def switch_default_end(token):
+        Proc.sem_st.append(Proc.curr_code_line)
+        Proc._add_code([Lang.jump('{}')])
 
 
 def process_actions(action_list : list, curr_token):

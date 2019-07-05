@@ -16,15 +16,15 @@ Compnd_stmt_function -> { Decl_list Stmt_list }.
 Compnd_stmt -> #scope_begin { Decl_list Stmt_list } #scope_end.
 Stmt_list -> Stmt Stmt_list | .
 Stmt -> Expr_stmt | Compnd_stmt | Sel_stmt | Iter_stmt | Ret_stmt | Switch_stmt.
-Expr_stmt -> Expr #pop_sem_st ; | continue #scope_simul_end #while_cont ; | break #scope_simul_end #while_br ; | ;.
+Expr_stmt -> Expr #pop_sem_st ; | continue #scope_cont_end #while_cont ; | break #scope_break_end #handle_break ; | ;.
 Sel_stmt -> if ( Expr ) #ifbeg #scope_begin Stmt #scope_end #ifmid else #scope_begin Stmt #scope_end #ifend.
 Iter_stmt -> while #scope_simul_beg #saveaddr #scope_begin ( Expr ) #while_beg Stmt #scope_end #while_end.
 Ret_stmt -> return Ret_stmt'.
 Ret_stmt' -> #func_finalize ; | Expr #return_expr #func_finalize ;.
-Switch_stmt -> switch ( Expr ) { Case_stmts Def_stmt }.
+Switch_stmt -> switch ( Expr ) #switch_beg #scope_begin { Case_stmts Def_stmt } #scope_end #switch_end.
 Case_stmts -> Case_stmt Case_stmts | .
-Case_stmt -> case num : Stmt_list.
-Def_stmt -> default : Stmt_list | .
+Case_stmt -> #scope_begin case #pnum num #scope_end #switch_case_beg : #scope_begin Stmt_list #scope_end #switch_case_end .
+Def_stmt -> default : #switch_default_beg Stmt_list #switch_default_end | .
 Expr_sec -> Term' Additive_expr' Simple_expr'.
 Expr -> + Fact Expr_sec | - Fact #eneg Expr_sec | #pnum num Expr_sec | ( Expr ) Expr_sec | #pname id Expr'.
 Expr' -> Call' Expr_sec | Var' Expr''.
