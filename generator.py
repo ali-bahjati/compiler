@@ -109,6 +109,8 @@ class Proc:
     func_tmp_off: list = [0]
     func_jump_st: list = []
 
+    loop_stack = []
+
     @staticmethod
     def init():
         Proc._add_code([
@@ -599,14 +601,62 @@ class Proc:
         line = Proc.sem_st.pop()
         Proc.code[line] = Proc.code[line].format(Proc.curr_code_line)
 
+    @staticmethod
+    def saveaddr(token):
+        Proc.sem_st.append(Proc.curr_code_line)
+
+    @staticmethod
+    def while_beg(token):
+        Proc._move_temp(Proc.sem_st.pop(), Proc.TR)
+
+        Proc.loop_stack[-1]['start'] = Proc.sem_st.pop()
+        Proc.loop_stack[-1]['end_st'] = [Proc.curr_code_line]
+
+        Proc._add_code([
+            Lang.jumpfalse(Proc.TR, '{}')
+        ])
+
+    @staticmethod
+    def while_br(token):
+        Proc.loop_stack[-1]['end_st'].append(Proc.curr_code_line)
+        Proc._add_code([Lang.jump('{}')])
+
+    @staticmethod
+    def while_cont(token):
+        Proc._add_code([Lang.jump(Proc.loop_stack[-1]['start'])])
+
+    @staticmethod
+    def while_end(token):
+        entry = Proc.loop_stack.pop()
+        Proc._add_code([Lang.jump(entry['start'])])
+
+        for item in entry['end_st']:
+            Proc.code[item] = Proc.code[item].format(Proc.curr_code_line)
+
+    @staticmethod
+    def scope_simul_beg(token):
+        Proc._add_code(Proc._push_tp(Proc.SP) +
+                       [Lang.add(Proc.TR, Proc.TP, '#1')]
+                       + Proc._push_tp(Proc.TR))
+
+        Proc.loop_stack.append({
+            'SP': Proc.func_tmp_off[-1],
+            'TP': Proc.func_tmp_off[-1] + 1,
+        })
+
+        Proc.func_tmp_off[-1] += 2
+        Proc.scope_tmps[Proc.curr_scope] += 2
+
+    @staticmethod
+    def scope_simul_end(token):  # For break and continue
+        Proc._move_temp(Proc.loop_stack[-1]['TP'], Proc.TP)
+        Proc._move_temp(Proc.loop_stack[-1]['SP'], Proc.SP)
+
 
 def process_actions(action_list : list, curr_token):
     logger.info( f"{action_list} {curr_token}")
     for action in action_list:
-        try:  # TODO: This exception should never occur
-            getattr(Proc, action)(curr_token)
-        except AttributeError as e:
-            print(e)
+        getattr(Proc, action)(curr_token)
 
     print('~~~~~~~~~~~~')
     print(action_list)
