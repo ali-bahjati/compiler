@@ -50,12 +50,11 @@ class Lang:
 
 
 class Proc:
-    BASE = 500000
+    BASE = 50000
     CODE_START = 0
     PTR_START = BASE
     DATA_START = 2 * BASE
     TEMP_START = 3 * BASE
-    MAX_LINES = 4 * BASE
 
     SP = PTR_START + 0
     TP = PTR_START + 1
@@ -99,7 +98,7 @@ class Proc:
     scope_syms = defaultdict(list)
     scope_tmps = defaultdict(int)
 
-    code = ['' for i in range(MAX_LINES)]
+    code = ['' for i in range(BASE)]
     curr_code_line = CODE_START
     curr_scope = 0
     curr_func_scope = 0
@@ -129,7 +128,7 @@ class Proc:
                 logger.error(f"Line {token['line']}: Symbol {name} is special. Don't mess with it!")
                 assert False
             else:
-                if Proc.sym_dict['name'][-1]['scope'] <= Proc.curr_scope:
+                if Proc.sym_dict['name'][-1]['scope'] > Proc.curr_scope:
                     logger.error( f"Line {token['line']}: Function variable equal to function name")
                     assert False
                 if Proc.sym_dict['name'][-1]['scope'] == Proc.curr_scope:
